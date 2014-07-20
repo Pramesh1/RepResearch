@@ -5,4 +5,213 @@ date: "Wednesday, July 16, 2014"
 output: html_document
 ---
 
+This assignment uses the dataset "Activity.csv" and generates a report that answers the questions requested by the instructor.  
+Each step will be described and the code included to make the peer review manageable.
+
+---
+Data Sets created and used here:
+- mydata = the raw data set
+- mydata1 = clean data set without NA
+- mydata2 = data set created for the averages / interval problem
+- mydata3 =  created for the NA `replacement problemn
+- mydata4 =  mydata 3 used in the last part of the question
+
+---
+
+  
+##### A. Loading and pre-processing the data
+
+```{r}
+mydata<-read.csv("activity.csv")
+```
+
+The loaded data produces these types of objects:  
+1. mydata = data frame  
+2. Variable(**steps**)= integer  
+3. Variable(**dates**) = factor (must be transformed to date format)  
+4. Variable(**interval**) = integer  
+  
+  
+    
+##### B. Get rid of NA  & Convert to desired formats
+```{r}
+mydata$date<-as.Date(mydata$date, format="%Y-%m-%d")
+mydata1 <- mydata[complete.cases(mydata),]
+
+
+```
+  
+*Result*  
+- mydata = 17 568 rows  (the original data including NA)  
+- mydata1 = 15 264 rows  (Cleaned dataset excluding the NA)  
+- mydata1$date  = date format
+
+
+##### C. Summary of the new data set 
+The cleand data set `mydata1` contains has 3 variables :
+```{r stepsInterval}
+head(mydata1)
+names(mydata1)
+
+```
+
+
+---
+
+##### QUESTION 1 : What is mean total number of steps taken per day?  
+
+
+* **Assignment Description**   
+*1.Make a histogram of the total number of steps taken each day*  
+*2.Calculate and report the mean and median total number of steps taken per day*  
+
+We need a table with Total Number of Steps / date.  
+I will use the function **tapply()** to aggregate the total number of steps per day  
+
+```{r}
+totsteps<-tapply(mydata1$steps,mydata1$date,sum)
+hist(totsteps)
+```
+
+```{r }
+mean(totsteps)
+median(totsteps)
+```
+
+
+  
+  
+  ---
+  
+
+##### QUESTION 2 : What is the average daily activity pattern?  
+
+
+* **Assignment Description**   
+* 1.Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)  
+* 2. Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
+
+
+  
+  
+**A. :** We now need to build the average steps by interval, using `tapply`, then
+
+```{r}
+mysteps<- tapply(mydata1$steps,mydata1$interval,mean)
+myint<-unique(mydata1$interval)
+plot(myint,mysteps,type="l",xlab="Interval",ylab="Steps Frequency")
+
+```
+  
+  
+  **B. :** We need to reassemble and build a dataframe from the `msteps` data (is an **array**)and the `myint` (of integers) both 288 rows long.
+  
+```{r}
+mydata2<-data.frame(mysteps,myint)
+mymax<-mydata2[mysteps==max(mysteps),]
+mymax$myint   #The interval with the max number of steps
+```
+
+
+
+---
+
+##### QUESTION 4 : Imputing missing values
+
+1. Calculate and report the total number of missing values in the dataset  
+2. Devise a strategy for filling in all of the missing values in the dataset. 
+3. Create a new dataset that is equal to the original dataset with the missing data filled in.  
+4. Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
+
+
+**A. : Calculate and report the total number of missing values **   
+
+`mydata`contains is the raw data while `mydata1`has been cleande of the NAs.  
+A simple substraction gives the result:
+
+```{r}
+nrow(mydata)-nrow(mydata1)
+
+```
+  
+**B. : Strategy to fill the NA ** 
+
+Simple and straightforward :  I'll use the mean of the clean data set `mydata1`
+
+```{r}
+fill<-mean(mydata1$steps)
+mysteps1<-mydata$steps
+mysteps1[is.na(mysteps1)==T]<-fill
+```
+
+**C. : New dataset equal to the original dataset but with the missing data filled in.**
+```{r}
+mydata3<-mydata
+mydata3$steps<-mysteps1
+```
+
+
+*D. : New Histogram**
+
+We again need a table with Total Number of Steps / date for this new data set. 
+As before, I will use the function **tapply()** to aggregate the total number of steps per day  
+
+```{r}
+totsteps1<-tapply(mydata3$steps,mydata3$date,sum)
+hist(totsteps1)
+```
+
+```{r }
+mean(totsteps1)
+median(totsteps1)
+```
+
+Replacing the missing values by the `mean` derived from the clean data set had no impact on the results.  
+The mean and meadin estimates are identical and the Histogram does nto appear to have changed.
+
+
+---
+
+##### QUESTION 5 :Are there differences in activity patterns between weekdays and weekends?
+
+
+**A . :Create a new factor variable in the dataset with two level.**  
+
+As requested, I'll use the dataset with the filled-in missing values for this part `mydata3.  
+
+(A new column is added to the dataset)
+
+```{r}
+
+mydays<-weekdays(mydata3$date)
+mydata4<-mydata3  # precaution
+mydata4$day<-mydays
+mydata4$day[mydata4$day=="Saturday" | mydata4$day=="Sunday"]<-"Weekend"
+mydata4$day[mydata4$day != "Weekend"]<-"Weekday"
+mydata4$day<-as.factor(mydata4$day)
+
+```
+
+
+**B . : Make a panel plot.**  
+
+- We need 2 datasets , one for the weekdays and one for the weekends
+- We then eed to perform the mean calculation for each sets for the inervals 
+- finally we can plot them
+
+
+```{r}
+wd_data<-mydata4[mydata4[,"day"]=="Weekday",]
+we_data<-mydata4[mydata4[,"day"]=="Weekend",]
+steps_wd<-tapply(wd_data$steps,wd_data$interval,mean)
+steps_we<-tapply(we_data$steps,we_data$interval,mean)
+plot(myint,steps_wd,type="l", main="Week Days Plot", xlab="interval", ylab="Number of Steps")
+plot(myint,steps_we,type="l",main="WeekEnd Plot",xlab="interval", ylab="Number of Steps")
+
+```
+
+
+ ** END **
+ 
+
 
