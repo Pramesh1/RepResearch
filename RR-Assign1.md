@@ -21,7 +21,8 @@ Data Sets created and used here:
   
 ##### A. Loading and pre-processing the data
 
-```{r}
+
+```r
 mydata<-read.csv("activity.csv")
 ```
 
@@ -34,11 +35,10 @@ The loaded data produces these types of objects:
   
     
 ##### B. Get rid of NA  & Convert to desired formats
-```{r}
+
+```r
 mydata$date<-as.Date(mydata$date, format="%Y-%m-%d")
 mydata1 <- mydata[complete.cases(mydata),]
-
-
 ```
   
 *Result*  
@@ -49,10 +49,27 @@ mydata1 <- mydata[complete.cases(mydata),]
 
 ##### C. Summary of the new data set 
 The cleand data set `mydata1` contains has 3 variables :
-```{r stepsInterval}
-head(mydata1)
-names(mydata1)
 
+```r
+head(mydata1)
+```
+
+```
+##     steps       date interval
+## 289     0 2012-10-02        0
+## 290     0 2012-10-02        5
+## 291     0 2012-10-02       10
+## 292     0 2012-10-02       15
+## 293     0 2012-10-02       20
+## 294     0 2012-10-02       25
+```
+
+```r
+names(mydata1)
+```
+
+```
+## [1] "steps"    "date"     "interval"
 ```
 
 
@@ -68,14 +85,29 @@ names(mydata1)
 We need a table with Total Number of Steps / date.  
 I will use the function **tapply()** to aggregate the total number of steps per day  
 
-```{r}
+
+```r
 totsteps<-tapply(mydata1$steps,mydata1$date,sum)
 hist(totsteps)
 ```
 
-```{r }
+![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-3.png) 
+
+
+```r
 mean(totsteps)
+```
+
+```
+## [1] 10766
+```
+
+```r
 median(totsteps)
+```
+
+```
+## [1] 10765
 ```
 
 
@@ -96,20 +128,27 @@ median(totsteps)
   
 **A. :** We now need to build the average steps by interval, using `tapply`, then
 
-```{r}
+
+```r
 mysteps<- tapply(mydata1$steps,mydata1$interval,mean)
 myint<-unique(mydata1$interval)
 plot(myint,mysteps,type="l",xlab="Interval",ylab="Steps Frequency")
-
 ```
+
+![plot of chunk unnamed-chunk-5](figure/unnamed-chunk-5.png) 
   
   
   **B. :** We need to reassemble and build a dataframe from the `msteps` data (is an **array**)and the `myint` (of integers) both 288 rows long.
   
-```{r}
+
+```r
 mydata2<-data.frame(mysteps,myint)
 mymax<-mydata2[mysteps==max(mysteps),]
 mymax$myint   #The interval with the max number of steps
+```
+
+```
+## [1] 835
 ```
 
 
@@ -129,23 +168,29 @@ mymax$myint   #The interval with the max number of steps
 `mydata`contains is the raw data while `mydata1`has been cleande of the NAs.  
 A simple substraction gives the result:
 
-```{r}
-nrow(mydata)-nrow(mydata1)
 
+```r
+nrow(mydata)-nrow(mydata1)
+```
+
+```
+## [1] 2304
 ```
   
 **B. : Strategy to fill the NA ** 
 
 Simple and straightforward :  I'll use the mean of the clean data set `mydata1`
 
-```{r}
+
+```r
 fill<-mean(mydata1$steps)
 mysteps1<-mydata$steps
 mysteps1[is.na(mysteps1)==T]<-fill
 ```
 
 **C. : New dataset equal to the original dataset but with the missing data filled in.**
-```{r}
+
+```r
 mydata3<-mydata
 mydata3$steps<-mysteps1
 ```
@@ -156,14 +201,29 @@ mydata3$steps<-mysteps1
 We again need a table with Total Number of Steps / date for this new data set. 
 As before, I will use the function **tapply()** to aggregate the total number of steps per day  
 
-```{r}
+
+```r
 totsteps1<-tapply(mydata3$steps,mydata3$date,sum)
 hist(totsteps1)
 ```
 
-```{r }
+![plot of chunk unnamed-chunk-10](figure/unnamed-chunk-10.png) 
+
+
+```r
 mean(totsteps1)
+```
+
+```
+## [1] 10766
+```
+
+```r
 median(totsteps1)
+```
+
+```
+## [1] 10766
 ```
 
 Replacing the missing values by the `mean` derived from the clean data set had no impact on the results.  
@@ -181,15 +241,14 @@ As requested, I'll use the dataset with the filled-in missing values for this pa
 
 (A new column is added to the dataset)
 
-```{r}
 
+```r
 mydays<-weekdays(mydata3$date)
 mydata4<-mydata3  # precaution
 mydata4$day<-mydays
 mydata4$day[mydata4$day=="Saturday" | mydata4$day=="Sunday"]<-"Weekend"
 mydata4$day[mydata4$day != "Weekend"]<-"Weekday"
 mydata4$day<-as.factor(mydata4$day)
-
 ```
 
 
@@ -200,7 +259,8 @@ mydata4$day<-as.factor(mydata4$day)
 - finally we can plot them
 
 
-```{r}
+
+```r
 wd_data<-mydata4[mydata4[,"day"]=="Weekday",]
 we_data<-mydata4[mydata4[,"day"]=="Weekend",]
 steps_wd<-tapply(wd_data$steps,wd_data$interval,mean)
@@ -208,8 +268,9 @@ steps_we<-tapply(we_data$steps,we_data$interval,mean)
 par(mfrow = c(2, 1))
 plot(myint,steps_wd,type="l", main="Week Days Plot", xlab="interval", ylab="Number of Steps")
 plot(myint,steps_we,type="l",main="WeekEnd Plot",xlab="interval", ylab="Number of Steps")
-
 ```
+
+![plot of chunk unnamed-chunk-13](figure/unnamed-chunk-13.png) 
 
 
  ** END **
